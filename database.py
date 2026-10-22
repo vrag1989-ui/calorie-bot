@@ -26,7 +26,7 @@ def add_meal(telegram_id, meal_name, calories):
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
     cursor.execute(
         "INSERT INTO meals (telegram_id, meal_name, calories, created_at) VALUES (?, ?, ?, ?)",
-        (telegram_id, meal_name, calories, now)
+        (telegram_id, meal_name, calories, now),
     )
     conn.commit()
     conn.close()
@@ -38,7 +38,7 @@ def get_today_meals(telegram_id):
     today = datetime.now().strftime("%Y-%m-%d")
     cursor.execute(
         "SELECT id, meal_name, calories, created_at FROM meals WHERE telegram_id = ? AND created_at LIKE ?",
-        (telegram_id, f"{today}%")
+        (telegram_id, f"{today}%"),
     )
     rows = cursor.fetchall()
     conn.close()
@@ -51,7 +51,7 @@ def get_today_total(telegram_id):
     today = datetime.now().strftime("%Y-%m-%d")
     cursor.execute(
         "SELECT COALESCE(SUM(calories), 0) FROM meals WHERE telegram_id = ? AND created_at LIKE ?",
-        (telegram_id, f"{today}%")
+        (telegram_id, f"{today}%"),
     )
     total = cursor.fetchone()[0]
     conn.close()

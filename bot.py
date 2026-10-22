@@ -9,6 +9,7 @@ from aiogram.types import (
     InlineKeyboardMarkup,
     InlineKeyboardButton,
     CallbackQuery,
+    BotCommand,
 )
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
@@ -164,6 +165,12 @@ async def main():
     init_db()
     print("CalorieBot is running!")
     await bot.delete_webhook(drop_pending_updates=True)
+    # Устанавливаем список команд (кнопка Меню в Телеграме)
+    await bot.set_my_commands(
+        [
+            BotCommand(command="start", description="Запустить бота"),
+        ]
+    )
     await dp.start_polling(bot)
 
 

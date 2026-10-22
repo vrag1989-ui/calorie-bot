@@ -58,7 +58,9 @@ async def meal_start(message: types.Message, state: FSMContext):
 @dp.message(AddMeal.waiting_for_name)
 async def meal_name(message: types.Message, state: FSMContext):
     await state.update_data(meal_name=message.text)
-    await message.answer(f"Записал: {message.text}\nТеперь напишите количество калорий (число):")
+    await message.answer(
+        f"Записал: {message.text}\nТеперь напишите количество калорий (число):"
+    )
     await state.set_state(AddMeal.waiting_for_calories)
 
 
@@ -109,11 +111,53 @@ async def day_stats(message: types.Message):
 
     remaining = DAILY_LIMIT - total
     if remaining > 0:
-        text += f"\n📊 Итого: {total} / {DAILY_LIMIT} ккал\n✅ Осталось: {remaining} ккал"
+        text += (
+            f"\n📊 Итого: {total} / {DAILY_LIMIT} ккал\n✅ Осталось: {remaining} ккал"
+        )
     else:
         text += f"\n📊 Итого: {total} / {DAILY_LIMIT} ккал\n🔴 Превышение: {abs(remaining)} ккал"
 
     await message.answer(text)
+
+
+# === УДАЛЕНИЕ ЗАПИСИ ===
+@dp.message(F.text == "🗑 Удалить запись")
+async def delete_start(message: types.Message):
+    meals = get_today_meals(message.from_user.id)
+
+    if not meals:
+        await message.answer("Сегодня записей нет — удалять нечего 🤷")
+        return
+
+    # Создаём инлайн-кнопку для каждой записи
+    buttons = []
+    for meal in meals:
+        meal_id, name, cals, time = meal
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text=f"❌ {name} — {cals} ккал", callback_data=f"del_{meal_id}"
+                )
+            ]
+        )
+
+    kb = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await message.answer("Какую запись удалить?", reply_markup=kb)
+
+
+@dp.callback_query(F.data.startswith("del_"))
+async def process_delete(callback: CallbackQuery):
+    meal_id = int(callback.data.split("_")[1])
+    delete_meal(meal_id)
+
+    # Обновляем итог
+    total = get_today_total(callback.from_user.id)
+    remaining = DAILY_LIMIT - total
+
+    await callback.message.answer(
+        f"🗑 Запись удалена!\n📊 Итого за день: {total} / {DAILY_LIMIT} ккал\n✅ Осталось: {remaining} ккал"
+    )
+    await callback.answer()
 
 
 async def main():
